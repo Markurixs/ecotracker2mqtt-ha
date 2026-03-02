@@ -3,7 +3,8 @@
 [![Home Assistant Add-on](https://img.shields.io/badge/Home%20Assistant-Add--on-blue?logo=homeassistant&logoColor=white)](https://github.com/Markurixs/ecotracker2mqtt-ha)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FMarkurixs%2Fecotracker2mqtt-ha)
+[![Add Repository to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FMarkurixs%2Fecotracker2mqtt-ha)
+[![Install ecotracker2mqtt](https://my.home-assistant.io/badges/supervisor_addon.svg)](https://my.home-assistant.io/redirect/supervisor_addon/?addon=ecotracker2mqtt&repository_url=https%3A%2F%2Fgithub.com%2FMarkurixs%2Fecotracker2mqtt-ha)
 
 Home Assistant Add-on das den [everHome EcoTracker](https://everhome.cloud) per lokaler HTTP API ausliest und alle Messwerte sekündlich per MQTT bereitstellt.
 
@@ -22,15 +23,15 @@ Home Assistant Add-on das den [everHome EcoTracker](https://everhome.cloud) per 
 
 ## Installation
 
-Klick auf den Button um das Repository direkt in Home Assistant hinzuzufügen:
+Klick auf den Button um ecotracker2mqtt direkt zu installieren:
 
-[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FMarkurixs%2Fecotracker2mqtt-ha)
+[![Install ecotracker2mqtt](https://my.home-assistant.io/badges/supervisor_addon.svg)](https://my.home-assistant.io/redirect/supervisor_addon/?addon=ecotracker2mqtt&repository_url=https%3A%2F%2Fgithub.com%2FMarkurixs%2Fecotracker2mqtt-ha)
 
 **Oder manuell:**
 
 1. *Einstellungen → Add-ons → Add-on Store → ⋮ (oben rechts) → Repositories*
 2. URL eintragen: `https://github.com/Markurixs/ecotracker2mqtt-ha`
-3. **EcoTracker MQTT Bridge** installieren und unter *Konfiguration* die IP des EcoTrackers eintragen
+3. **ecotracker2mqtt** installieren und unter *Konfiguration* die IP des EcoTrackers eintragen
 4. Add-on starten
 
 > **Tipp:** Wenn der *Mosquitto Broker* Add-on installiert ist, wird der MQTT-Broker automatisch erkannt. `mqtt_host` kann leer bleiben.
