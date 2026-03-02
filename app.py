@@ -2,7 +2,7 @@
 
 Polls the everHome EcoTracker local HTTP API and publishes all values
 to MQTT.  When running as an HA add-on the MQTT broker credentials are
-auto-discovered from the Supervisor API (Mosquitto add-on).  Manual
+auto-detected from the Supervisor API (Mosquitto add-on).  Manual
 config via options.json always takes precedence.
 """
 
@@ -31,7 +31,7 @@ def _load_options() -> dict:
             return json.load(fh)
     # Fallback: plain Docker via env vars
     return {
-        "ecotracker_url": os.environ.get("ECOTRACKER_URL", "http://192.168.44.233/v1/json"),
+        "ecotracker_host": os.environ.get("ECOTRACKER_HOST", "192.168.44.233"),
         "poll_interval": float(os.environ.get("POLL_INTERVAL", "1")),
         "mqtt_host": os.environ.get("MQTT_HOST", ""),
         "mqtt_port": int(os.environ.get("MQTT_PORT", "1883")),
@@ -45,7 +45,7 @@ def _load_options() -> dict:
 
 
 def _discover_ha_mqtt() -> dict | None:
-    """Try to discover MQTT credentials via the HA Supervisor API."""
+    """Try to detect MQTT broker via the HA Supervisor API."""
     token = os.environ.get("SUPERVISOR_TOKEN")
     if not token:
         return None
@@ -58,7 +58,7 @@ def _discover_ha_mqtt() -> dict | None:
         resp.raise_for_status()
         data = resp.json().get("data", {})
         if data.get("host"):
-            log.info("Auto-discovered HA MQTT service at %s:%s", data["host"], data["port"])
+            log.info("Auto-detected HA MQTT broker at %s:%s", data["host"], data["port"])
             return {
                 "host": data["host"],
                 "port": int(data.get("port", 1883)),
@@ -66,7 +66,7 @@ def _discover_ha_mqtt() -> dict | None:
                 "password": data.get("password", ""),
             }
     except Exception as exc:
-        log.debug("MQTT auto-discovery failed: %s", exc)
+        log.debug("MQTT auto-detection failed: %s", exc)
     return None
 
 
@@ -83,14 +83,15 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-ECOTRACKER_URL = opts.get("ecotracker_url", "http://192.168.44.233/v1/json")
+_host = opts.get("ecotracker_host", "192.168.44.233")
+ECOTRACKER_URL = f"http://{_host}/v1/json"
 POLL_INTERVAL = float(opts.get("poll_interval", 1))
 MQTT_TOPIC_PREFIX = opts.get("mqtt_topic_prefix", "ecotracker")
 MQTT_QOS = int(opts.get("mqtt_qos", 0))
 MQTT_RETAIN = bool(opts.get("mqtt_retain", True))
 HTTP_TIMEOUT = float(opts.get("http_timeout", 5))
 
-# MQTT: manual config takes precedence, then HA auto-discovery
+# MQTT: manual config takes precedence, then HA auto-detection
 MQTT_HOST = opts.get("mqtt_host", "")
 MQTT_PORT = int(opts.get("mqtt_port", 1883))
 MQTT_USER = opts.get("mqtt_user", "")
@@ -105,7 +106,7 @@ if not MQTT_HOST:
         MQTT_PASS = ha_mqtt["password"]
 
 if not MQTT_HOST:
-    log.error("No MQTT broker configured and auto-discovery failed. "
+    log.error("No MQTT broker configured and auto-detection failed. "
               "Set mqtt_host in the add-on config or install the Mosquitto add-on.")
     sys.exit(1)
 
