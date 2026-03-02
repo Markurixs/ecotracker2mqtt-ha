@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0
+
+- EcoTracker Auto-Discovery: scannt das lokale Netzwerk automatisch wenn `ecotracker_host` leer ist
+- Erkennt den EcoTracker anhand der `/v1/json` API-Antwort (`power` + `energyCounterIn`)
+- Paralleler Subnet-Scan (50 Threads, ~5 Sekunden für ein /24 Netz)
+- `ecotracker_host` ist jetzt optional — leer lassen für Auto-Discovery
+
 ## 1.1.1
 
 - Fix: `SUPERVISOR_TOKEN` war nicht verfügbar wegen s6-overlay — `run.sh` mit `with-contenv` eingeführt

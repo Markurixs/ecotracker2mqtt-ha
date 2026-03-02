@@ -6,10 +6,13 @@ auto-detected from the Supervisor API (Mosquitto add-on).  Manual
 config via options.json always takes precedence.
 """
 
+import concurrent.futures
+import ipaddress
 import json
 import logging
 import os
 import signal
+import socket
 import sys
 import time
 
@@ -42,6 +45,67 @@ def _load_options() -> dict:
         "mqtt_retain": os.environ.get("MQTT_RETAIN", "true").lower() == "true",
         "log_level": os.environ.get("LOG_LEVEL", "info"),
     }
+
+
+# ---------------------------------------------------------------------------
+# EcoTracker auto-discovery
+# ---------------------------------------------------------------------------
+
+def _get_local_subnets() -> list[ipaddress.IPv4Network]:
+    """Return /24 subnets for all local non-loopback IPv4 addresses."""
+    subnets = []
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            addr = info[4][0]
+            if not addr.startswith("127."):
+                net = ipaddress.IPv4Network(f"{addr}/24", strict=False)
+                if net not in subnets:
+                    subnets.append(net)
+    except Exception:
+        pass
+    # Also try common HA host networks if nothing found
+    if not subnets:
+        for prefix in ["192.168.1.0/24", "192.168.178.0/24", "10.0.0.0/24"]:
+            subnets.append(ipaddress.IPv4Network(prefix))
+    return subnets
+
+
+def _probe_ecotracker(ip: str) -> str | None:
+    """Check if an IP hosts an EcoTracker. Returns the IP or None."""
+    try:
+        resp = requests.get(f"http://{ip}/v1/json", timeout=0.8)
+        if resp.ok:
+            data = resp.json()
+            if "power" in data and "energyCounterIn" in data:
+                return ip
+    except Exception:
+        pass
+    return None
+
+
+def _discover_ecotracker() -> str | None:
+    """Scan local subnets for an EcoTracker device."""
+    subnets = _get_local_subnets()
+    log.info("Scanning for EcoTracker on %s ...", ", ".join(str(s) for s in subnets))
+
+    all_ips = []
+    for subnet in subnets:
+        all_ips.extend(str(ip) for ip in subnet.hosts())
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=50) as pool:
+        futures = {pool.submit(_probe_ecotracker, ip): ip for ip in all_ips}
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                log.info("EcoTracker found at %s", result)
+                # Cancel remaining probes
+                for f in futures:
+                    f.cancel()
+                return result
+
+    log.warning("No EcoTracker found on local network")
+    return None
+
 
 
 # Supervisor API endpoints – hostname 'supervisor' may not resolve with
@@ -112,7 +176,13 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-_host = opts.get("ecotracker_host", "192.168.44.233")
+_host = opts.get("ecotracker_host", "").strip()
+if not _host:
+    log.info("No ecotracker_host configured – starting auto-discovery …")
+    _host = _discover_ecotracker()
+    if not _host:
+        log.error("EcoTracker not found. Set ecotracker_host in the add-on config.")
+        sys.exit(1)
 ECOTRACKER_URL = f"http://{_host}/v1/json"
 POLL_INTERVAL = float(opts.get("poll_interval", 1))
 MQTT_TOPIC_PREFIX = opts.get("mqtt_topic_prefix", "ecotracker")

@@ -12,6 +12,7 @@ Home Assistant Add-on das den [everHome EcoTracker](https://everhome.cloud) per 
 
 ## Features
 
+- **Auto-Discovery** — findet den EcoTracker automatisch im lokalen Netzwerk
 - Pollt die EcoTracker HTTP API (Standard: jede Sekunde)
 - Publiziert jeden Messwert als eigenes MQTT Topic + kompletten JSON-Payload
 - Erkennt den Mosquitto Broker Add-on automatisch — keine manuelle MQTT-Konfiguration nötig
@@ -65,7 +66,7 @@ Alle Optionen sind über die Add-on UI einstellbar:
 
 | Option | Standard | Beschreibung |
 | --- | --- | --- |
-| `ecotracker_host` | `192.168.44.233` | IP-Adresse oder Hostname des EcoTrackers |
+| `ecotracker_host` | *(leer)* | IP/Hostname des EcoTrackers. Leer = Auto-Discovery im lokalen Netzwerk |
 | `poll_interval` | `1` | Abfrageintervall in Sekunden (0.1 – 60) |
 | `mqtt_host` | *(leer)* | MQTT Broker IP/Hostname. Leer = automatische Erkennung des Mosquitto Add-ons |
 | `mqtt_port` | `1883` | MQTT Broker Port |
