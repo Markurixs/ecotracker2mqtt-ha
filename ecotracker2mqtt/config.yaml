@@ -12,6 +12,8 @@ arch:
 init: false
 host_network: true
 hassio_api: true
+services:
+  - mqtt:want
 startup: application
 map:
   - config:rw

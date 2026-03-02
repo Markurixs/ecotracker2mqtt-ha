@@ -44,29 +44,58 @@ def _load_options() -> dict:
     }
 
 
+# Supervisor API endpoints – hostname 'supervisor' may not resolve with
+# host_network: true, so we fall back to the hard-coded Supervisor IP.
+SUPERVISOR_URLS = ["http://supervisor", "http://172.30.32.2"]
+
+# Docker hostnames that don't resolve with host_network and their
+# localhost equivalents (Mosquitto add-on also uses host_network).
+DOCKER_HOST_MAP = {
+    "core-mosquitto": "127.0.0.1",
+    "addon_core_mosquitto": "127.0.0.1",
+}
+
+
 def _discover_ha_mqtt() -> dict | None:
     """Try to detect MQTT broker via the HA Supervisor API."""
     token = os.environ.get("SUPERVISOR_TOKEN")
     if not token:
+        log.warning("SUPERVISOR_TOKEN not set – MQTT auto-detection unavailable")
         return None
-    try:
-        resp = requests.get(
-            "http://supervisor/services/mqtt",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=5,
-        )
-        resp.raise_for_status()
-        data = resp.json().get("data", {})
-        if data.get("host"):
-            log.info("Auto-detected HA MQTT broker at %s:%s", data["host"], data["port"])
+
+    for base_url in SUPERVISOR_URLS:
+        try:
+            log.info("Trying MQTT auto-detection via %s …", base_url)
+            resp = requests.get(
+                f"{base_url}/services/mqtt",
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=5,
+            )
+            resp.raise_for_status()
+            data = resp.json().get("data", {})
+            host = data.get("host", "")
+            if not host:
+                log.warning("Supervisor returned empty MQTT host")
+                return None
+
+            # Map Docker hostnames to IPs reachable with host_network
+            resolved = DOCKER_HOST_MAP.get(host, host)
+            if resolved != host:
+                log.info("Mapped MQTT host %s → %s (host_network)", host, resolved)
+
+            port = int(data.get("port", 1883))
+            log.info("Auto-detected MQTT broker at %s:%s", resolved, port)
             return {
-                "host": data["host"],
-                "port": int(data.get("port", 1883)),
+                "host": resolved,
+                "port": port,
                 "user": data.get("username", ""),
                 "password": data.get("password", ""),
             }
-    except Exception as exc:
-        log.debug("MQTT auto-detection failed: %s", exc)
+        except Exception as exc:
+            log.warning("MQTT detection via %s failed: %s", base_url, exc)
+            continue
+
+    log.warning("All Supervisor endpoints failed – MQTT auto-detection unsuccessful")
     return None
 
 
