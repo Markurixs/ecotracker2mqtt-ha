@@ -1,7 +1,19 @@
 # Changelog
 
+## 1.1.0
+
+- MQTT Broker-Erkennung gefixt: Fallback auf Supervisor-IP (172.30.32.2) bei host_network
+- Docker-Hostname `core-mosquitto` wird automatisch auf `127.0.0.1` gemappt
+- `services: mqtt:want` in config.yaml hinzugefügt
+- Logging bei MQTT-Erkennung auf WARNING/INFO hochgestuft
+- Konfiguration vereinfacht: nur noch IP/Hostname statt voller URL
+- Repo-Struktur korrigiert (Add-on in Subdirectory)
+- CHANGELOG.md in Add-on-Verzeichnis verschoben (HA-kompatibel)
+- Install-Button für Home Assistant in README
+
 ## 1.0.1
-- fixing mqtt autodiscover
+
+- Erster Fix MQTT Auto-Detect
 ## 1.0.0
 
 - Initiales Release
