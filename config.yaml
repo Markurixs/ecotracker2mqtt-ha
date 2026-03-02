@@ -1,0 +1,41 @@
+name: "EcoTracker MQTT Bridge"
+description: "Reads everHome EcoTracker power data via local HTTP API and publishes to MQTT every second."
+version: "1.0.0"
+slug: "ecotracker-mqtt"
+url: "https://github.com/Markurixs/eco2mqtt"
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+init: false
+host_network: true
+hassio_api: true
+startup: application
+map:
+  - config:rw
+
+options:
+  ecotracker_url: "http://192.168.44.233/v1/json"
+  poll_interval: 1
+  mqtt_host: ""
+  mqtt_port: 1883
+  mqtt_user: ""
+  mqtt_password: ""
+  mqtt_topic_prefix: "ecotracker"
+  mqtt_qos: 0
+  mqtt_retain: true
+  log_level: "info"
+
+schema:
+  ecotracker_url: url
+  poll_interval: "float(0.1,60)"
+  mqtt_host: "str?"
+  mqtt_port: port
+  mqtt_user: "str?"
+  mqtt_password: "password?"
+  mqtt_topic_prefix: str
+  mqtt_qos: "int(0,2)"
+  mqtt_retain: bool
+  log_level: "list(debug|info|warning|error)"
