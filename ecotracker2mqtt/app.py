@@ -238,6 +238,7 @@ def on_connect(client, _userdata, _flags, rc, _properties=None):
     if rc == 0:
         log.info("Connected to MQTT broker %s:%s", MQTT_HOST, MQTT_PORT)
         client.publish(f"{MQTT_TOPIC_PREFIX}/status", payload="online", qos=1, retain=True)
+        publish_discovery(client)
     else:
         log.error("MQTT connection failed (rc=%s)", rc)
 
@@ -283,7 +284,57 @@ def poll_ecotracker() -> dict | None:
 
 
 # ---------------------------------------------------------------------------
-# Publish
+# HA MQTT Discovery
+# ---------------------------------------------------------------------------
+
+DISCOVERY_PREFIX = "homeassistant"
+
+SENSOR_DEFS = [
+    {"key": "power",            "name": "Leistung",            "device_class": "power",    "state_class": "measurement",      "unit": "W"},
+    {"key": "powerAvg",         "name": "Leistung Durchschnitt", "device_class": "power",    "state_class": "measurement",      "unit": "W"},
+    {"key": "powerPhase1",      "name": "Leistung L1",          "device_class": "power",    "state_class": "measurement",      "unit": "W"},
+    {"key": "powerPhase2",      "name": "Leistung L2",          "device_class": "power",    "state_class": "measurement",      "unit": "W"},
+    {"key": "powerPhase3",      "name": "Leistung L3",          "device_class": "power",    "state_class": "measurement",      "unit": "W"},
+    {"key": "energyCounterIn",  "name": "Z\u00e4hler Bezug",         "device_class": "energy",   "state_class": "total_increasing", "unit": "kWh"},
+    {"key": "energyCounterOut", "name": "Z\u00e4hler Einspeisung",   "device_class": "energy",   "state_class": "total_increasing", "unit": "kWh"},
+    {"key": "agePower",         "name": "Messwert Alter",        "device_class": "duration", "state_class": "measurement",      "unit": "ms",  "entity_category": "diagnostic"},
+]
+
+
+def publish_discovery(client: mqtt.Client):
+    """Publish HA MQTT Discovery config for all sensors."""
+    device = {
+        "identifiers": [f"{MQTT_TOPIC_PREFIX}_ecotracker"],
+        "name": "EcoTracker",
+        "manufacturer": "everHome",
+        "model": "EcoTracker",
+    }
+
+    for sensor in SENSOR_DEFS:
+        uid = f"{MQTT_TOPIC_PREFIX}_{sensor['key']}"
+        payload = {
+            "name": sensor["name"],
+            "unique_id": uid,
+            "state_topic": f"{MQTT_TOPIC_PREFIX}/{sensor['key']}",
+            "device_class": sensor["device_class"],
+            "state_class": sensor["state_class"],
+            "unit_of_measurement": sensor["unit"],
+            "device": device,
+            "availability_topic": f"{MQTT_TOPIC_PREFIX}/status",
+            "payload_available": "online",
+            "payload_not_available": "offline",
+        }
+        if "entity_category" in sensor:
+            payload["entity_category"] = sensor["entity_category"]
+
+        topic = f"{DISCOVERY_PREFIX}/sensor/{uid}/config"
+        client.publish(topic, payload=json.dumps(payload), qos=1, retain=True)
+
+    log.info("Published HA MQTT Discovery config for %d sensors", len(SENSOR_DEFS))
+
+
+# ---------------------------------------------------------------------------
+# Publish values
 # ---------------------------------------------------------------------------
 
 def publish(client: mqtt.Client, data: dict):
@@ -292,7 +343,6 @@ def publish(client: mqtt.Client, data: dict):
     # Individual values
     for key, value in data.items():
         client.publish(f"{MQTT_TOPIC_PREFIX}/{key}", payload=str(value), qos=MQTT_QOS, retain=MQTT_RETAIN)
-
 
 # ---------------------------------------------------------------------------
 # Main

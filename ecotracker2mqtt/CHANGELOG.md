@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.0
+
+- HA MQTT Discovery: Sensoren erscheinen automatisch in Home Assistant
+- Device "EcoTracker" (everHome) mit allen Sensoren gruppiert
+- Korrekte device_class/state_class für Energy Dashboard Kompatibilität
+- `agePower` als diagnostischer Sensor
+
 ## 1.2.1
 
 - Fix: Subnet-Erkennung nutzt jetzt `ip addr` statt `socket.getaddrinfo` — erkennt das tatsächliche Subnetz korrekt (auch /21, /22 etc.)
