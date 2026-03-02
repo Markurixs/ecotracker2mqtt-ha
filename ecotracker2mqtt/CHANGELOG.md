@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1
+
+- Fix: `SUPERVISOR_TOKEN` war nicht verfügbar wegen s6-overlay — `run.sh` mit `with-contenv` eingeführt
+
 ## 1.1.0
 
 - MQTT Broker-Erkennung gefixt: Fallback auf Supervisor-IP (172.30.32.2) bei host_network
