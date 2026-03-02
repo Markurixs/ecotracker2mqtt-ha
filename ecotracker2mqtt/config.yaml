@@ -1,6 +1,6 @@
 name: "ecotracker2mqtt"
 description: "Reads everHome EcoTracker power data via local HTTP API and publishes to MQTT every second."
-version: "1.2.0"
+version: "1.2.1"
 slug: "ecotracker2mqtt"
 url: "https://github.com/Markurixs/ecotracker2mqtt-ha"
 arch:

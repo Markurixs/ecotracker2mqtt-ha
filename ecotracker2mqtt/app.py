@@ -12,7 +12,7 @@ import json
 import logging
 import os
 import signal
-import socket
+import subprocess
 import sys
 import time
 
@@ -52,21 +52,27 @@ def _load_options() -> dict:
 # ---------------------------------------------------------------------------
 
 def _get_local_subnets() -> list[ipaddress.IPv4Network]:
-    """Return /24 subnets for all local non-loopback IPv4 addresses."""
+    """Detect local subnets via 'ip addr' (works with host_network)."""
     subnets = []
     try:
-        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
-            addr = info[4][0]
-            if not addr.startswith("127."):
-                net = ipaddress.IPv4Network(f"{addr}/24", strict=False)
-                if net not in subnets:
-                    subnets.append(net)
-    except Exception:
-        pass
-    # Also try common HA host networks if nothing found
-    if not subnets:
-        for prefix in ["192.168.1.0/24", "192.168.178.0/24", "10.0.0.0/24"]:
-            subnets.append(ipaddress.IPv4Network(prefix))
+        result = subprocess.run(
+            ["ip", "-o", "-4", "addr", "show"],
+            capture_output=True, text=True, timeout=5,
+        )
+        for line in result.stdout.splitlines():
+            # Format: "2: eth0  inet 192.168.44.100/21 brd ..."
+            parts = line.split()
+            for i, part in enumerate(parts):
+                if part == "inet" and i + 1 < len(parts):
+                    cidr = parts[i + 1]  # e.g. 192.168.44.100/21
+                    try:
+                        net = ipaddress.IPv4Network(cidr, strict=False)
+                        if not net.is_loopback and net not in subnets:
+                            subnets.append(net)
+                    except ValueError:
+                        pass
+    except Exception as exc:
+        log.warning("Failed to detect local subnets: %s", exc)
     return subnets
 
 

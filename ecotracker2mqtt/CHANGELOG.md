@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1
+
+- Fix: Subnet-Erkennung nutzt jetzt `ip addr` statt `socket.getaddrinfo` — erkennt das tatsächliche Subnetz korrekt (auch /21, /22 etc.)
+- Kein Fallback auf hardcoded Subnetze mehr
+
 ## 1.2.0
 
 - EcoTracker Auto-Discovery: scannt das lokale Netzwerk automatisch wenn `ecotracker_host` leer ist
