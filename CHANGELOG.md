@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.0.1
+- fixing mqtt autodiscover
 ## 1.0.0
 
 - Initiales Release
