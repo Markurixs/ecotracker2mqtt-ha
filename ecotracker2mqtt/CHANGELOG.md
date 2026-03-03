@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.4.4
+## 1.4.5
 
-- Fix: Flask bindet nur noch auf `127.0.0.1` — Port nicht mehr extern erreichbar
+- Revert: Flask wieder auf `0.0.0.0` — `127.0.0.1` bricht Ingress bei `host_network: true` (Supervisor-Proxy läuft in separatem Container)
 
 ## 1.4.3
 
