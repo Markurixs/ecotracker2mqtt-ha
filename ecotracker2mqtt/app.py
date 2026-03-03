@@ -6,16 +6,20 @@ auto-detected from the Supervisor API (Mosquitto add-on).  Manual
 config via options.json always takes precedence.
 """
 
+import collections
 import concurrent.futures
 import ipaddress
 import json
 import logging
 import os
+import pathlib
 import signal
 import subprocess
 import sys
+import threading
 import time
 
+from flask import Flask, jsonify, send_from_directory
 import paho.mqtt.client as mqtt
 import requests
 
@@ -216,6 +220,49 @@ if not MQTT_HOST:
     sys.exit(1)
 
 # ---------------------------------------------------------------------------
+# In-memory log buffer for web UI
+# ---------------------------------------------------------------------------
+LOG_BUFFER: collections.deque = collections.deque(maxlen=500)
+
+
+class _BufferHandler(logging.Handler):
+    """Append formatted log lines to the shared ring buffer."""
+    def emit(self, record):
+        LOG_BUFFER.append(self.format(record))
+
+
+_buf_handler = _BufferHandler()
+_buf_handler.setFormatter(logging.Formatter(
+    "%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S",
+))
+logging.getLogger().addHandler(_buf_handler)
+
+
+# ---------------------------------------------------------------------------
+# Flask web UI (ingress) — live log viewer
+# ---------------------------------------------------------------------------
+WWW_DIR = pathlib.Path(__file__).parent / "www"
+
+flask_app = Flask(__name__)
+flask_app.logger.setLevel(logging.WARNING)
+
+
+@flask_app.route("/")
+def index():
+    return send_from_directory(WWW_DIR, "index.html")
+
+
+@flask_app.route("/api/logs")
+def api_logs():
+    return jsonify(list(LOG_BUFFER))
+
+
+def _run_webserver():
+    """Run Flask on the ingress port in a daemon thread."""
+    flask_app.run(host="0.0.0.0", port=8099, threaded=True)
+
+
+# ---------------------------------------------------------------------------
 # Graceful shutdown
 # ---------------------------------------------------------------------------
 running = True
@@ -354,6 +401,11 @@ def main():
     log.info("  MQTT broker    : %s:%s", MQTT_HOST, MQTT_PORT)
     log.info("  Topic prefix   : %s", MQTT_TOPIC_PREFIX)
     log.info("  Poll interval  : %ss", POLL_INTERVAL)
+    log.info("  Web UI         : http://0.0.0.0:8099")
+
+    # Start web UI in background thread
+    web_thread = threading.Thread(target=_run_webserver, daemon=True)
+    web_thread.start()
 
     client = create_mqtt_client()
 

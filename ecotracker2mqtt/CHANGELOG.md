@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0
+
+- Live-Log in der HA Seitenleiste via Ingress
+- Zeigt die letzten 500 Log-Zeilen in Echtzeit (1s Refresh)
+- Farbiges Log-Level Highlighting (ERROR rot, WARNING orange, DEBUG grau)
+- Auto-Scroll mit manueller Scroll-Pause
+
 ## 1.3.0
 
 - HA MQTT Discovery: Sensoren erscheinen automatisch in Home Assistant
