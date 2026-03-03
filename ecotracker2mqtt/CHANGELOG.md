@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.4
+
+- Fix: Flask bindet nur noch auf `127.0.0.1` — Port nicht mehr extern erreichbar
+
 ## 1.4.3
 
 - Fix: Werkzeug Request-Logging unterdrückt — keine "GET /api/logs" Zeilen mehr im Live-Log
