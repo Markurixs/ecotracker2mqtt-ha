@@ -324,7 +324,7 @@ def api_logs():
 
 def _run_webserver():
     """Run Flask on the ingress port in a daemon thread."""
-    flask_app.run(host="0.0.0.0", port=8099, threaded=True)
+    flask_app.run(host="0.0.0.0", port=8098, threaded=True)
 
 
 # ---------------------------------------------------------------------------

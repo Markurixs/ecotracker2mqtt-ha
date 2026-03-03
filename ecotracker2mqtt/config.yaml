@@ -1,6 +1,6 @@
 name: "ecotracker2mqtt"
 description: "Reads everHome EcoTracker power data via local HTTP API and publishes to MQTT every second."
-version: "1.4.1"
+version: "1.4.2"
 slug: "ecotracker2mqtt"
 url: "https://github.com/Markurixs/ecotracker2mqtt-ha"
 arch:
@@ -10,9 +10,9 @@ arch:
   - armv7
   - i386
 ingress: true
-ingress_port: 8099
+ingress_port: 8098
 ingress_entry: /
-panel_icon: "mdi:flash"
+panel_icon: "mdi:meter-electric"
 panel_title: "EcoTracker"
 init: false
 host_network: true
