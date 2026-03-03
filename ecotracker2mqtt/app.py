@@ -310,6 +310,7 @@ poll();setInterval(poll,1000);
 
 flask_app = Flask(__name__)
 flask_app.logger.setLevel(logging.WARNING)
+logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 
 @flask_app.route("/")

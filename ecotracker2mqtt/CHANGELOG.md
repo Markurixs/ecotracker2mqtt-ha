@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.3
+
+- Fix: Werkzeug Request-Logging unterdrückt — keine "GET /api/logs" Zeilen mehr im Live-Log
+
 ## 1.4.2
 
 - Fix: Ingress-Port von 8099 auf 8098 geändert — Konflikt mit Hoymiles Add-on bei `host_network: true`
