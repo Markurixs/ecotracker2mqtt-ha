@@ -12,14 +12,13 @@ import ipaddress
 import json
 import logging
 import os
-import pathlib
 import signal
 import subprocess
 import sys
 import threading
 import time
 
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, Response
 import paho.mqtt.client as mqtt
 import requests
 
@@ -241,7 +240,73 @@ logging.getLogger().addHandler(_buf_handler)
 # ---------------------------------------------------------------------------
 # Flask web UI (ingress) — live log viewer
 # ---------------------------------------------------------------------------
-WWW_DIR = pathlib.Path(__file__).parent / "www"
+
+LOG_VIEWER_HTML = """\
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EcoTracker Log</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a1a;color:#d4d4d4;font-family:"SF Mono","Cascadia Mono","JetBrains Mono","Fira Code",Consolas,monospace;font-size:13px;height:100vh;display:flex;flex-direction:column}
+#hd{background:#222;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #333;flex-shrink:0}
+#hd .t{font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#e1e1e1}
+#hd .st{font-size:11px;color:#666;display:flex;align-items:center;gap:8px}
+.dot{width:7px;height:7px;border-radius:50%;background:#555}
+.dot.ok{background:#2dd4a0;box-shadow:0 0 6px rgba(45,212,160,.5)}
+#log{flex:1;overflow-y:auto;padding:8px 16px;scroll-behavior:auto}
+.ln{padding:2px 0;white-space:pre-wrap;word-break:break-all;line-height:1.45}
+.ln.e{color:#f06060}
+.ln.w{color:#e8a630}
+.ln.d{color:#666}
+.ln.i{color:#d4d4d4}
+#ft{background:#222;padding:6px 16px;font-size:11px;color:#555;border-top:1px solid #333;display:flex;justify-content:space-between;flex-shrink:0}
+.ps{color:#e8a630}
+</style>
+</head>
+<body>
+<div id="hd"><span class="t">EcoTracker Log</span><span class="st"><span id="cnt">0 lines</span><span id="dt" class="dot"></span></span></div>
+<div id="log"></div>
+<div id="ft"><span id="si">Auto-scroll aktiv</span><span>1s Refresh</span></div>
+<script>
+(function(){
+var log=document.getElementById("log"),dt=document.getElementById("dt"),
+    cnt=document.getElementById("cnt"),si=document.getElementById("si"),
+    auto=true,prev=0;
+log.addEventListener("scroll",function(){
+  var atBottom=log.scrollHeight-log.scrollTop-log.clientHeight<40;
+  auto=atBottom;
+  si.textContent=auto?"Auto-scroll aktiv":"Auto-scroll pausiert";
+  si.className=auto?"":"ps";
+});
+function cls(l){
+  if(l.indexOf("[ERROR]")!==-1)return"e";
+  if(l.indexOf("[WARNING]")!==-1)return"w";
+  if(l.indexOf("[DEBUG]")!==-1)return"d";
+  return"i";
+}
+function poll(){
+  fetch("./api/logs").then(function(r){return r.json()}).then(function(lines){
+    dt.classList.add("ok");
+    if(lines.length===prev&&prev>0)return;
+    prev=lines.length;
+    cnt.textContent=lines.length+" lines";
+    var html="";
+    for(var i=0;i<lines.length;i++){
+      html+='<div class="ln '+cls(lines[i])+'">'+lines[i].replace(/</g,"&lt;")+"</div>";
+    }
+    log.innerHTML=html;
+    if(auto)log.scrollTop=log.scrollHeight;
+  }).catch(function(){dt.classList.remove("ok")});
+}
+poll();setInterval(poll,1000);
+})();
+</script>
+</body>
+</html>
+"""
 
 flask_app = Flask(__name__)
 flask_app.logger.setLevel(logging.WARNING)
@@ -249,7 +314,7 @@ flask_app.logger.setLevel(logging.WARNING)
 
 @flask_app.route("/")
 def index():
-    return send_from_directory(WWW_DIR, "index.html")
+    return Response(LOG_VIEWER_HTML, mimetype="text/html")
 
 
 @flask_app.route("/api/logs")
@@ -425,7 +490,15 @@ def main():
             data = poll_ecotracker()
             if data is not None:
                 publish(client, data)
-                log.debug("Published: %s", data)
+                log.info(
+                    "%+dW (L1:%+d L2:%+d L3:%+d) | Bezug:%.1fkWh Einsp:%.1fkWh",
+                    data.get("power", 0),
+                    data.get("powerPhase1", 0),
+                    data.get("powerPhase2", 0),
+                    data.get("powerPhase3", 0),
+                    data.get("energyCounterIn", 0),
+                    data.get("energyCounterOut", 0),
+                )
             else:
                 log.debug("No data this cycle")
             elapsed = time.monotonic() - t0

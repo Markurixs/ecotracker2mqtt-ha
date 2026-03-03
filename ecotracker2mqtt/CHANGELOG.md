@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.1
+
+- HTML Log-Viewer direkt in Python eingebettet — kein separates `www/` Verzeichnis mehr
+- `www/` Ordner und `index.html` entfernt
+- `pathlib` / `send_from_directory` Abhängigkeiten entfernt
+
 ## 1.4.0
 
 - Live-Log in der HA Seitenleiste via Ingress
