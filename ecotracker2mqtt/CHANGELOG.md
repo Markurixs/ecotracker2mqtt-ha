@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.6
+
+- Fix: `energyCounterIn` und `energyCounterOut` von Wh in kWh umgerechnet (/1000)
+
 ## 1.4.5
 
 - Revert: Flask wieder auf `0.0.0.0` — `127.0.0.1` bricht Ingress bei `host_network: true` (Supervisor-Proxy läuft in separatem Container)

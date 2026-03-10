@@ -450,11 +450,22 @@ def publish_discovery(client: mqtt.Client):
 # Publish values
 # ---------------------------------------------------------------------------
 
+# Keys whose raw values are in Wh — convert to kWh before publishing.
+WH_TO_KWH_KEYS = {"energyCounterIn", "energyCounterOut"}
+
+
 def publish(client: mqtt.Client, data: dict):
-    # Full JSON
-    client.publish(f"{MQTT_TOPIC_PREFIX}/json", payload=json.dumps(data), qos=MQTT_QOS, retain=MQTT_RETAIN)
-    # Individual values
+    converted = {}
     for key, value in data.items():
+        if key in WH_TO_KWH_KEYS:
+            converted[key] = round(value / 1000, 3)
+        else:
+            converted[key] = value
+
+    # Full JSON (converted)
+    client.publish(f"{MQTT_TOPIC_PREFIX}/json", payload=json.dumps(converted), qos=MQTT_QOS, retain=MQTT_RETAIN)
+    # Individual values
+    for key, value in converted.items():
         client.publish(f"{MQTT_TOPIC_PREFIX}/{key}", payload=str(value), qos=MQTT_QOS, retain=MQTT_RETAIN)
 
 # ---------------------------------------------------------------------------
